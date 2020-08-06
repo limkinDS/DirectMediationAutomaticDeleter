@@ -1,16 +1,17 @@
 from ftplib import FTP
 import datetime
 import os
-
+    #host = "directmediation.spoonds.com"
+    #port = 22
+    #user = "luis"
+    #pwd = "xakga5-Zomgaq-pyqwig"
 
 #connects to the host server on the default port (21), have to figure out how to precise a new port
 ftp = FTP('directmediation.spoonds.com')
-#ftp.login('username', 'password')
-ftp.login('', '')
+ftp.login('luis', 'xakga5-Zomgaq-pyqwig')
 
 #changes the working directory
-#ftp.cwd('folder that needs the focus')
-ftp.cwd('')
+ftp.cwd('luis')
 
 
 def deleteAllFiles(ftp):
