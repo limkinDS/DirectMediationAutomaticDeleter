@@ -1,6 +1,5 @@
 from ftplib import FTP
 import datetime
-import os
 
 
 # host = "directmediation.spoonds.com"
@@ -11,17 +10,17 @@ import os
 
 def ftp_login():
     # connects to the host server on the default port (21), have to figure out how to precise a new port
-    ftp_server = FTP('directmediation.spoonds.com')
-    ftp_server.login('luis', 'xakga5-Zomgaq-pyqwig')
+    ftp_server_login = FTP('directmediation.spoonds.com')
+    ftp_server_login.login('luis', 'xakga5-Zomgaq-pyqwig')
 
     # changes the working directory
-    ftp_server.cwd('luis')
+    ftp_server_login.cwd('luis')
 
-    return ftp_server
+    return ftp_server_login
 
 
-def folder_count(ftp_server):
-    files = ftp_server.mlsd()
+def folder_count(ftp_server_count):
+    files = ftp_server_count.mlsd()
 
     count_start = 0
 
@@ -39,16 +38,16 @@ def folder_count(ftp_server):
             count_start += 1
             print(name)
 
-        count_delete = count_start
+        folder_count_delete = count_start
         # print(len(ftp.nlst()))
         # for (i = 0; i = file.length-1; i++):
         # ftp.delete(name)
 
-        return count_delete
+        return folder_count_delete
 
 
-def folder_delete(count_delete, ftp_server):
-    folders = ftp_server.mlsd()
+def folder_delete(folder_count_delete, ftp_server_delete):
+    folders = ftp_server_delete.mlsd()
     print('folders')
     for folder in folders:
 
@@ -59,10 +58,10 @@ def folder_delete(count_delete, ftp_server):
         time2 = str(time1).split()
         time = time2[0]
         if time > today:
-            if count_delete > 1:
+            if folder_count_delete > 1:
                 print(name)
                 # ftp.rmd(name)
-                count_delete -= 1
+                folder_count_delete -= 1
 
 
 if __name__ == '__main__':
