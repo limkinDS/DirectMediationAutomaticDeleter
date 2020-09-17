@@ -1,47 +1,118 @@
+import logging
 import re
-from ftplib import FTP
 from datetime import datetime as dt
 from datetime import timedelta
+from ftplib import FTP, error_perm
+from pathlib import Path
+
 from FTPWalk import FTPWalk
+
+logging.basicConfig(filename='./log/' + str(dt.utcnow().date()) + '.log',
+                    level=logging.DEBUG,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
 
 
 def ftp_login():
     # connects to the host server on the default port (21), have to figure out how to precise a new port
-    ftp_server = FTP('directmediation.spoonds.com')
-    ftp_server.login('luis', 'xakga5-Zomgaq-pyqwig')
+    ftp = FTP('directmediation.spoonds.com')
+    ftp.login('luis', 'xakga5-Zomgaq-pyqwig')
 
-    return ftp_server
+    return ftp
 
 
-def walk_through_folders(connection, path):
-    ftp_walk = FTPWalk(connection)
+def tree(ftp_walk, ftp, path: Path, prefix: str = ''):
+    # prefix components:
+    space = '    '
+    branch = '│   '
+    # pointers:
+    tee = '├── '
+    last = '└── '
 
-    check_folder = re.compile('\d{14}')
-    list_company = []
+    root = path + '/'
+
+    contents = list(ftp_walk.listdir(path)[0])
+    # contents each get pointers that are ├── with a final └── :
+    pointers = [tee] * (len(contents) - 1) + [last]
+    for pointer, path in zip(pointers, contents):
+        yield prefix + pointer + path
+        if is_dir(ftp, path):  # extend the prefix and recurse:
+            extension = branch if pointer == tee else space
+            # i.e. space because last, └── , above so no more |
+            yield from tree(ftp_walk, ftp, root + path, prefix=prefix + extension)
+
+
+def is_dir(ftp, path):
+    try:
+        ftp.cwd(path)
+        return False
+    except error_perm:
+        return True
+
+
+def walk_through_folders(ftp, path):
+    ftp_walk = FTPWalk(ftp)
+
+    check_folder = re.compile('\\d{14}')
+
+    logging.info('###### FTP Directory Tree ######')
+    for line in tree(ftp_walk, ftp, path):
+        logging.info(line)
+
+    logging.info('###### Deleting Directories ######')
+    logging.info('\t• empty')
+    logging.info('\t• older then 7 days')
+    logging.info('\t• not only directory for company')
+    logging.info('\t• youngest of multiple directories')
 
     for i in ftp_walk.walk(path):
-        if (len(i[1]) > 1) and (len(check_folder.findall(str(i[1]))) > 0):
-            company = []
-            for folder_with_date in i[1]:
-                company.append(i[0]+'/'+folder_with_date)
-            list_company.append(company)
+        root = i[0]
+        files = i[2]
 
-    return list_company
+        if check_folder.search(root):
+            if len(files) == 0:  # check if any files are in dir
+                if folder_date_older_7_days(root):  # check if folder is older then 7 days
+                    if check_if_youngest_and_not_only_folder(root):  # youngest and not only folder in root
+                        logging.info('Deleting %s', root)
+                        ftp.rmd(root)  # delete dir
 
 
-def delete_any_folder_older_7_days(tree):
+def check_if_youngest_and_not_only_folder(root):
+    split_path = root.split('/')
+    folder_with_timestamp = split_path[4]
+    folder_with_date = folder_with_timestamp.split('_')[0]
+    datetime_of_folder = dt.strptime(folder_with_date, '%Y%m%d%H%M%S')
 
-    for companies in tree:
-        for company in companies:
-            date_pid = company.split('/')[4]
-            date = date_pid.split('_')[0]
-            timestamp_folder = dt.strptime(date, '%Y%m%d%H%M%S')
-            if (dt.now() - timestamp_folder) > timedelta(7):
-                print(company)
+    cut_root = root.replace('/' + folder_with_timestamp, '')
 
+    # make a new connection to ftp
+    with ftp_login() as ftp:
+        ftp_walk = FTPWalk(ftp)
+        directories = ftp_walk.listdir(cut_root)[0]
+
+    # Checks if in directory is more then one file
+    if len(directories) <= 1:
+        return False
+
+    for i in directories:
+
+        dir_with_date = i.split('_')[0]
+        datetime_of_dir = dt.strptime(dir_with_date, '%Y%m%d%H%M%S')
+        if datetime_of_folder < datetime_of_dir:
+            return True
+
+    return False
+
+
+def folder_date_older_7_days(folder):
+    date_pid = folder.split('/')[4]
+    date = date_pid.split('_')[0]
+    timestamp_folder = dt.strptime(date, '%Y%m%d%H%M%S')
+    if (dt.now() - timestamp_folder) > timedelta(7):
+        return True
+    else:
+        return False
 
 
 if __name__ == '__main__':
-    ftp_server = ftp_login()
-    file_tree = walk_through_folders(ftp_server, '/cronus/viamail')
-    delete_any_folder_older_7_days(file_tree)
+    with ftp_login() as ftp_server:
+        walk_through_folders(ftp_server, '/cronus/viamail/')
