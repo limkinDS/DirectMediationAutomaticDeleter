@@ -59,10 +59,13 @@ def walk_through_folders(ftp, path):
         logging.info(line)
 
     logging.info('###### Deleting Directories ######')
-    logging.info('\t• empty')
+    logging.info('\t• empty directories')
     logging.info('\t• older then 7 days')
-    logging.info('\t• not only directory for company')
-    logging.info('\t• youngest of multiple directories')
+    logging.info('\t• not the only directory for the company')
+    logging.info('\t• oldest of multiple directories')
+
+    count = 0
+    skipped_dir = []
 
     for i in ftp_walk.walk(path):
         root = i[0]
@@ -74,6 +77,17 @@ def walk_through_folders(ftp, path):
                     if check_if_youngest_and_not_only_folder(root):  # youngest and not only folder in root
                         logging.info('Deleting %s', root)
                         ftp.rmd(root)  # delete dir
+                        count = count + 1
+            else:
+                if folder_date_older_7_days(root):  # check if folder is older then 7 days
+                    skipped_dir.append(root)
+
+    logging.info("Deleted %s directories", str(count))
+
+    logging.info("###### Non-Deleted Full Directories ######")
+    for s_dir in skipped_dir:
+        logging.info("Folder with file %s", s_dir)
+    logging.info("Skipped %s directories", str(len(skipped_dir)))
 
 
 def check_if_youngest_and_not_only_folder(root):
