@@ -49,8 +49,9 @@ def is_dir(ftp, path):
         return True
 
 
-def walk_through_folders(ftp, path):
+def walk_through_folders_and_delete(ftp):
     ftp_walk = FTPWalk(ftp)
+    path = '/cronus/viamail/'
 
     check_folder = re.compile('\\d{14}')
 
@@ -127,6 +128,14 @@ def folder_date_older_7_days(folder):
         return False
 
 
+def send_log_to_ftp(ftp):
+    ftp.cwd('/cronus/viamail logfiles/')
+
+    with open('./log/' + str(dt.utcnow().date()) + '.log', 'rb') as logfile:
+        ftp.storbinary('STOR ' + str(dt.utcnow().date()) + '.log', logfile)
+
+
 if __name__ == '__main__':
     with ftp_login() as ftp_server:
-        walk_through_folders(ftp_server, '/cronus/viamail/')
+        walk_through_folders_and_delete(ftp_server)
+        send_log_to_ftp(ftp_server)

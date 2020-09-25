@@ -1,5 +1,6 @@
 from os import path as ospath
 
+
 # https://stackoverflow.com/questions/31465199/extending-pythons-os-walk-function-on-ftp-server
 
 
@@ -8,6 +9,7 @@ class FTPWalk:
     This class is contain corresponding functions for traversing the FTP
     servers using BFS algorithm.
     """
+
     def __init__(self, connection):
         self.connection = connection
 
@@ -20,7 +22,7 @@ class FTPWalk:
         try:
             self.connection.cwd(_path)
         except Exception as exp:
-            print ("the current path is : ", self.connection.pwd(), exp.__str__(),_path)
+            print("the current path is : ", self.connection.pwd(), exp.__str__(), _path)
             return [], []
         else:
             self.connection.retrlines('LIST', lambda x: file_list.append(x.split()))
