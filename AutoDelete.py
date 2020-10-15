@@ -154,7 +154,7 @@ if __name__ == '__main__':
         elif opt == '-p':
             password = arg
         elif opt == '-h':
-            print("<Path to Directmediation venv>/bin/python <Path to File>/AutoDeleter.py -n <login Name> - p <login Password>")
+            print("<Path to Directmediation venv>/bin/python <Path to File>/AutoDeleter.py -n <login Name> -p <login Password>")
 
     with ftp_login(name, password) as ftp_server:
         walk_through_folders_and_delete(ftp_server, name, password)
