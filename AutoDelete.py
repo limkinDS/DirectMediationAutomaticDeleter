@@ -10,11 +10,17 @@ from pathlib import Path
 
 from FTPWalk import FTPWalk
 
-handler = logging.FileHandler('./log/' + str(dt.utcnow().date()) + '.log', 'a', encoding='utf-8')
 formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-handler.setFormatter(formatter)
+
+file_handler = logging.FileHandler('./log/' + str(dt.utcnow().date()) + '.log', 'a', encoding='utf-8')
+file_handler.setFormatter(formatter)
+
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(formatter)
+
 log: Logger = logging.getLogger()
-log.addHandler(handler)
+log.addHandler(file_handler)
+log.addHandler(console_handler)
 log.setLevel(logging.DEBUG)
 
 
@@ -80,8 +86,7 @@ def walk_through_folders_and_delete(ftp, name, password):
         if check_folder.search(root):
             if len(files) == 0:  # check if any files are in dir
                 if folder_date_older_7_days(root):  # check if folder is older then 7 days
-                    if check_if_youngest_and_not_only_folder(root, name,
-                                                             password):  # youngest and not only folder in root
+                    if check_if_youngest_and_not_only_folder(root, name,password):# youngest and not only folder in root
                         log.info('Deleting %s', root)
                         ftp.rmd(root)  # delete dir
                         count = count + 1
