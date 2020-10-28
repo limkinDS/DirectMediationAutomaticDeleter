@@ -1,24 +1,27 @@
+import getopt
 import logging
 import re
-import sys, getopt
+import sys
 from datetime import datetime as dt
 from datetime import timedelta
 from ftplib import FTP, error_perm
+from logging import Logger
 from pathlib import Path
 
 from FTPWalk import FTPWalk
 
-logging.basicConfig(filename='./log/' + str(dt.utcnow().date()) + '.log',
-                    level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+handler = logging.FileHandler('./log/' + str(dt.utcnow().date()) + '.log', 'a', encoding='utf-8')
+formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+handler.setFormatter(formatter)
+log: Logger = logging.getLogger()
+log.addHandler(handler)
+log.setLevel(logging.DEBUG)
 
 
 def ftp_login(name, password):
     # connects to the host server on the default port (21), have to figure out how to precise a new port
-
     ftp = FTP('directmediation.spoonds.com')
     ftp.login(name, password)
-    #ftp.login('luis', 'xakga5-Zomgaq-pyqwig')
     return ftp
 
 
@@ -51,21 +54,21 @@ def is_dir(ftp, path):
         return True
 
 
-def walk_through_folders_and_delete(ftp,name, password):
+def walk_through_folders_and_delete(ftp, name, password):
     ftp_walk = FTPWalk(ftp)
     path = '/cronus/viamail/'
 
     check_folder = re.compile('\\d{14}')
 
-    logging.info('###### FTP Directory Tree ######')
+    log.info('###### FTP Directory Tree ######')
     for line in tree(ftp_walk, ftp, path):
         logging.info(line)
 
-    logging.info('###### Deleting Directories ######')
-    logging.info('\t• empty directories')
-    logging.info('\t• older then 7 days')
-    logging.info('\t• not the only directory for the company')
-    logging.info('\t• oldest of multiple directories')
+    log.info('###### Deleting Directories ######')
+    log.info('\t• empty directories')
+    log.info('\t• older then 7 days')
+    log.info('\t• not the only directory for the company')
+    log.info('\t• oldest of multiple directories')
 
     count = 0
     skipped_dir = []
@@ -77,20 +80,21 @@ def walk_through_folders_and_delete(ftp,name, password):
         if check_folder.search(root):
             if len(files) == 0:  # check if any files are in dir
                 if folder_date_older_7_days(root):  # check if folder is older then 7 days
-                    if check_if_youngest_and_not_only_folder(root, name, password):  # youngest and not only folder in root
-                        logging.info('Deleting %s', root)
+                    if check_if_youngest_and_not_only_folder(root, name,
+                                                             password):  # youngest and not only folder in root
+                        log.info('Deleting %s', root)
                         ftp.rmd(root)  # delete dir
                         count = count + 1
             else:
                 if folder_date_older_7_days(root):  # check if folder is older then 7 days
                     skipped_dir.append(root)
 
-    logging.info("Deleted %s directories", str(count))
+    log.info("Deleted %s directories", str(count))
 
-    logging.info("###### Non-Deleted Full Directories ######")
+    log.info("###### Non-Deleted Full Directories ######")
     for s_dir in skipped_dir:
-        logging.info("Folder with file %s", s_dir)
-    logging.info("Skipped %s directories", str(len(skipped_dir)))
+        log.info("Folder with file %s", s_dir)
+    log.info("Skipped %s directories", str(len(skipped_dir)))
 
 
 def check_if_youngest_and_not_only_folder(root, name, password):
@@ -154,7 +158,8 @@ if __name__ == '__main__':
         elif opt == '-p':
             password = arg
         elif opt == '-h':
-            print("<Path to Directmediation venv>/bin/python <Path to File>/AutoDeleter.py -n <login Name> -p <login Password>")
+            print(
+                "<Path to Directmediation venv>/bin/python <Path to File>/AutoDeleter.py -n <login Name> -p <login Password>")
 
     with ftp_login(name, password) as ftp_server:
         walk_through_folders_and_delete(ftp_server, name, password)
