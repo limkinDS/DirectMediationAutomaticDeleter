@@ -125,7 +125,7 @@ def check_if_youngest_and_not_only_folder(root, name, password):
 
 
 def folder_date_older_7_days(folder):
-    date_pid = folder.split('/')[4]
+    date_pid = folder.split('/')[-1]
     date = date_pid.split('_')[0]
     timestamp_folder = dt.strptime(date, '%Y%m%d%H%M%S')
     if (dt.now() - timestamp_folder) > timedelta(7):
