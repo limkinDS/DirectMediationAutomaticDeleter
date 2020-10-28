@@ -144,10 +144,10 @@ def send_log_to_ftp(ftp):
 if __name__ == '__main__':
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "n:p:", ["name=", "password="])
-    except getopt.GetoptError:
-        print('test.py <inputfile> -o <outputfile>')
-        sys.exit(-1)
+        opts, args = getopt.getopt(sys.argv[1:], "hn:p:", ["help", "name=", "password="])
+    except getopt.GetoptError as err:
+        print(str(err))
+        sys.exit(1)
 
     name = ""
     password = ""
@@ -160,6 +160,7 @@ if __name__ == '__main__':
         elif opt == '-h':
             print(
                 "<Path to Directmediation venv>/bin/python <Path to File>/AutoDeleter.py -n <login Name> -p <login Password>")
+            sys.exit(0)
 
     with ftp_login(name, password) as ftp_server:
         walk_through_folders_and_delete(ftp_server, name, password)
